@@ -1,2 +1,2 @@
-Piano App - ver1.0
+Piano App - ver2.0 SNAPSHOT
 use: canvas to draw
