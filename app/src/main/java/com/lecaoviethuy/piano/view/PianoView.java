@@ -12,7 +12,6 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import com.lecaoviethuy.piano.MainActivity;
-import com.lecaoviethuy.piano.R;
 import com.lecaoviethuy.piano.entities.Key;
 import com.lecaoviethuy.piano.util.SoundManager;
 
@@ -25,11 +24,15 @@ public class PianoView extends View {
     private Paint black, white, yellow;
     private int keyWidth, keyHeight;
     private SoundManager soundManager;
+    private List<Integer> soundKeys;
+
+    private List<Key> lastTouchedKey;
 
     public PianoView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         soundManager = SoundManager.getInstance();
         soundManager.init(context);
+        soundKeys = soundManager.getSoundKeys();
 
         black = new Paint();
         black.setColor(Color.BLACK);
@@ -43,6 +46,7 @@ public class PianoView extends View {
 
         whites = new ArrayList<>();
         blacks = new ArrayList<>();
+        lastTouchedKey = new ArrayList<>();
     }
 
     @Override
@@ -52,26 +56,26 @@ public class PianoView extends View {
         keyWidth = MainActivity.widthOfScreen / keyNumber;
         keyHeight = MainActivity.heightOfScreen;
 
+        int blackKeyCount = 10;
         for (int i = 0; i < keyNumber; i++){
             int left = i * keyWidth;
             int right = left + keyWidth;
 
             RectF rectF = new RectF(left, 0, right, keyHeight);
-            whites.add(new Key(0, rectF, false));
+            whites.add(new Key(soundKeys.get(i), rectF, false));
 
             if(i != 0 && i != 3 && i!=7 && i!=10){
                 rectF = new RectF((float) (i-1) * keyWidth + 0.75f * keyWidth
                                 , 0
                                 , (float) i*keyWidth + 0.25f * keyWidth
                                 , 0.67f*keyHeight);
-                blacks.add(new Key(0, rectF, false));
+                blacks.add(new Key(soundKeys.get(blackKeyCount++), rectF, false));
             }
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        System.out.println("onDraw");
         super.onDraw(canvas);
 
         for(Key key : whites){
@@ -79,9 +83,6 @@ public class PianoView extends View {
         }
         for(Key key : blacks){
             canvas.drawRect(key.getRect(), key.isDown() ? yellow : black);
-            if(key.isDown()){
-                System.out.println("Downnnnnnnnnnnnnnnnnnnnnnnnnnnn");
-            }
         }
 
         for(int i = 0; i < keyNumber; i++){
@@ -95,45 +96,69 @@ public class PianoView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        System.out.println("onTouch");
-        for(Key key : whites){
-            key.setDown(false);
-        }
-        for(Key key : blacks){
-            key.setDown(false);
-        }
-
-        int action = event.getAction();
-        System.out.println("action: " + action);
-        boolean isDownAction = (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE);
-        System.out.println("isDownAction: " + isDownAction);
+        int action = event.getActionMasked();
+        boolean isDownAction = (action == MotionEvent.ACTION_DOWN
+                            || action == MotionEvent.ACTION_MOVE
+                            || action == MotionEvent.ACTION_POINTER_1_DOWN);
 
         for (int touchIndex = 0; touchIndex < event.getPointerCount(); touchIndex++){
             float x = event.getX(touchIndex);
             float y = event.getY(touchIndex);
 
+            boolean isBlackKeyTyped = false;
             for (Key key : blacks){
                 if(key.getRect().contains(x, y)){
-                    System.out.println("Black " + isDownAction);
+                    if(!key.isDown() && !lastTouchedKey.contains(key)){
+                        soundManager.playSound(key.getSound());
+                    }
+                    lastTouchedKey.add(key);
                     key.setDown(isDownAction);
-                    soundManager.playSound(key.getSound()); // not yet
-                    invalidate();
-                    return true;
+                    isBlackKeyTyped = true;
                 }
             }
 
             for (Key key : whites){
                 if(key.getRect().contains(x, y)){
-                    System.out.println("White" + isDownAction);
-                    key.setDown(isDownAction);
-                    soundManager.playSound(key.getSound()); // not yet
-                    invalidate();
-                    return true;
+                    if(!isBlackKeyTyped){
+                        if(!key.isDown() && !lastTouchedKey.contains(key)){
+                            soundManager.playSound(key.getSound());
+                        }
+                        lastTouchedKey.add(key);
+                        key.setDown(isDownAction);
+                    }
                 }
             }
-
         }
 
+        // handle last touched key
+        if(!isDownAction){
+            for(Key key : lastTouchedKey){
+                key.setDown(false);
+            }
+            lastTouchedKey.clear();
+        }
+
+        if(action == MotionEvent.ACTION_MOVE){
+            List<Key> tmpKey = new ArrayList<>();
+            for(Key key : lastTouchedKey){
+                key.setDown(false);
+            }
+
+            for (int touchIndex = 0; touchIndex < event.getPointerCount(); touchIndex++){
+                float x = event.getX(touchIndex);
+                float y = event.getY(touchIndex);
+
+                for(Key key : lastTouchedKey){
+                    if(key.getRect().contains(x, y)){
+                        key.setDown(true);
+                        tmpKey.add(key);
+                    }
+                }
+            }
+            lastTouchedKey = tmpKey;
+        }
+
+        invalidate();
         return true;
     }
 }

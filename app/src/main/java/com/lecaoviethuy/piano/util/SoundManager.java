@@ -9,12 +9,16 @@ import android.util.SparseIntArray;
 
 import com.lecaoviethuy.piano.R;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class SoundManager {
 
     private SoundPool mSoundPool;
     private SparseIntArray mSoundPoolMap;
     private boolean mMuted = false;
+    private List<Integer> soundKeys;
 
     private static final int MAX_STREAMS = 10;
     private static final int STOP_DELAY_MILLIS = 10000;
@@ -40,11 +44,11 @@ public class SoundManager {
 
     public void init(Context context){
         this.mContext = context;
-        instance.initStreamtypeMedia((Activity) context);
+        instance.initStreamTypeMedia((Activity) context);
         instance.addSound(R.raw.c3);
         instance.addSound(R.raw.c4);
-        instance.addSound(R.raw.d3);
         instance.addSound(R.raw.d2);
+        instance.addSound(R.raw.d3);
         instance.addSound(R.raw.e3);
         instance.addSound(R.raw.e4);
         instance.addSound(R.raw.f3);
@@ -57,17 +61,26 @@ public class SoundManager {
         instance.addSound(R.raw.b4);
         instance.addSound(R.raw.ab3);
         instance.addSound(R.raw.ab4);
+        instance.addSound(R.raw.bb3);
+        instance.addSound(R.raw.bb4);
+        instance.addSound(R.raw.db4);
+        instance.addSound(R.raw.eb2);
+        instance.addSound(R.raw.eb3);
+        instance.addSound(R.raw.eb4);
         instance.addSound(R.raw.gb3);
         instance.addSound(R.raw.gb4);
-//        instance.addSound(R.raw.bb4);
-//        instance.addSound(R.raw.db4);
-//        instance.addSound(R.raw.c4);
-//        instance.addSound(R.raw.ab2);
-//        instance.addSound(R.raw.ab2);
-//        instance.addSound(R.raw.ab2);
+
+        soundKeys = new ArrayList<>();
+        for(int i = 0; i <mSoundPoolMap.size(); i++){
+            soundKeys.add(mSoundPoolMap.keyAt(i));
+        }
     }
 
-    public void initStreamtypeMedia(Activity activity){
+    public List<Integer> getSoundKeys(){
+        return this.soundKeys;
+    }
+
+    public void initStreamTypeMedia(Activity activity){
         activity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
