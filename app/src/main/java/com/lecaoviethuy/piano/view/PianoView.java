@@ -21,8 +21,8 @@ import java.util.List;
 public class PianoView extends View {
     private int keyNumber = 14;
     private List<Key> whites, blacks;
-    private Paint black, white, yellow;
-    private int keyWidth, keyHeight;
+    private Paint black, white, yellow, red;
+    private int keyWidth, keyHeight, screenWidth, screenHeight;
     private SoundManager soundManager;
     private List<Integer> soundKeys;
 
@@ -43,6 +43,9 @@ public class PianoView extends View {
         yellow = new Paint();
         yellow.setColor(Color.YELLOW);
         yellow.setStyle(Paint.Style.FILL);
+        red = new Paint();
+        red.setColor(Color.RED);
+        red.setStyle(Paint.Style.FILL);
 
         whites = new ArrayList<>();
         blacks = new ArrayList<>();
@@ -53,23 +56,41 @@ public class PianoView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
-        keyWidth = MainActivity.widthOfScreen / keyNumber;
-        keyHeight = MainActivity.heightOfScreen;
+        keyWidth = w / keyNumber;
+        keyHeight = h / 2;
+        screenWidth = w;
+        screenHeight = h;
 
-        int blackKeyCount = 10;
+        int bottomBlackKeyCount = 14;
+        int topBlackKeyCount = 23;
         for (int i = 0; i < keyNumber; i++){
             int left = i * keyWidth;
             int right = left + keyWidth;
 
-            RectF rectF = new RectF(left, 0, right, keyHeight);
+            // bottom white
+            RectF rectF = new RectF(left, keyHeight, right, screenHeight);
             whites.add(new Key(soundKeys.get(i), rectF, false));
+            // top white
+            rectF = new RectF(left, 0, right, keyHeight);
+            whites.add(new Key(soundKeys.get(keyNumber - 1 - i), rectF, false));
 
+            // bottom black
             if(i != 0 && i != 3 && i!=7 && i!=10){
                 rectF = new RectF((float) (i-1) * keyWidth + 0.75f * keyWidth
-                                , 0
+                                , keyHeight
                                 , (float) i*keyWidth + 0.25f * keyWidth
-                                , 0.67f*keyHeight);
-                blacks.add(new Key(soundKeys.get(blackKeyCount++), rectF, false));
+                                , 1.67f*keyHeight);
+                blacks.add(new Key(soundKeys.get(bottomBlackKeyCount++), rectF, false));
+            }
+
+            // top black
+            int j = keyNumber - 1 - i;
+            if(j != 0 && j != 3 && j!=7 && j!=10){
+                rectF = new RectF((float) (i) * keyWidth + 0.75f * keyWidth
+                        , (1 - 0.67f)*keyHeight
+                        , (float) (i+1)*keyWidth + 0.25f * keyWidth
+                        , keyHeight);
+                blacks.add(new Key(soundKeys.get(topBlackKeyCount--), rectF, false));
             }
         }
     }
@@ -86,12 +107,23 @@ public class PianoView extends View {
         }
 
         for(int i = 0; i < keyNumber; i++){
+            // bottom line
             if(i != 0 && i != 3 && i!=7 && i!=10){
-                canvas.drawLine(i * keyWidth, 0.67f * keyHeight, i * keyWidth, keyHeight, black);
+                canvas.drawLine(i * keyWidth, 1.67f * keyHeight, i * keyWidth, screenHeight, black);
             } else {
-                canvas.drawLine(i * keyWidth, 0, i * keyWidth, keyHeight, black);
+                canvas.drawLine(i * keyWidth, keyHeight, i * keyWidth, screenHeight, black);
+            }
+            //top line
+            int j = keyNumber - 1 - i;
+            if(j != 0 && j != 3 && j!=7 && j!=10){
+                canvas.drawLine((i + 1) * keyWidth, 0, (i + 1) * keyWidth, (1-0.67f) * keyHeight, black);
+            } else {
+                canvas.drawLine((i + 1) * keyWidth, 0, (i + 1) * keyWidth, keyHeight, black);
             }
         }
+
+        // line separate
+        canvas.drawLine(0, keyHeight, screenWidth, keyHeight, red);
     }
 
     @Override
